@@ -67,6 +67,15 @@ const BirthdayWebsite = () => {
         ))}
       </div>
       
+      {/* Gift Ribbon Overlay */}
+      <div className="gift-ribbon-container">
+        <div className="gift-ribbon">
+          <div className="ribbon-left"></div>
+          <div className="ribbon-right"></div>
+          <div className="ribbon-knot"></div>
+        </div>
+      </div>
+      
       <div className="hero-content">
         <h1 className="main-heading">Happy Birthday Laddooo Master </h1>
         <p className="hero-subtext">
@@ -108,6 +117,56 @@ const BirthdayWebsite = () => {
             With all my love in a Possitive Way,<br />
             Your Best Friend Gudduuu 
           </p>
+        </div>
+      </div>
+
+      {/* Photos Grid Section */}
+      <div className={`photos-grid-section ${isLetterVisible ? 'visible' : ''}`}>
+        <h3 className="photos-heading">Our Special Moments 📸</h3>
+        <p className="photos-subtext">Memories that made our friendship beautiful</p>
+        
+        <div className="photos-grid">
+          <div className="photo-card">
+            <div className="photo-placeholder">
+              <img src="/photo1.jpg" alt="Memory 1" />
+            </div>
+            <p className="photo-caption">First memory together</p>
+          </div>
+          
+          <div className="photo-card">
+            <div className="photo-placeholder">
+              <img src="/photo2.jpg" alt="Memory 2" />
+            </div>
+            <p className="photo-caption">Happy times</p>
+          </div>
+          
+          <div className="photo-card">
+            <div className="photo-placeholder">
+              <img src="/photo3.jpg" alt="Memory 3" />
+            </div>
+            <p className="photo-caption">Unforgettable moments</p>
+          </div>
+          
+          <div className="photo-card">
+            <div className="photo-placeholder">
+              <img src="/photo4.jpg" alt="Memory 4" />
+            </div>
+            <p className="photo-caption">Adventures together</p>
+          </div>
+          
+          <div className="photo-card">
+            <div className="photo-placeholder">
+              <img src="/photo5.jpg" alt="Memory 5" />
+            </div>
+            <p className="photo-caption">Cherished friendship</p>
+          </div>
+          
+          <div className="photo-card">
+            <div className="photo-placeholder">
+              <img src="/photo6.jpg" alt="Memory 6" />
+            </div>
+            <p className="photo-caption">Forever memories</p>
+          </div>
         </div>
       </div>
 
@@ -157,6 +216,56 @@ const BirthdayWebsite = () => {
         <button onClick={handleSendMessage} className="send-button">
           Send
         </button>
+      </div>
+
+      {/* Photos Section on Chat Page */}
+      <div className="chat-photos-section">
+        <h3 className="photos-heading">More Precious Moments 💫</h3>
+        <p className="photos-subtext">Reliving our best times together</p>
+        
+        <div className="photos-grid">
+          <div className="photo-card">
+            <div className="photo-placeholder">
+              <img src="/chat-photo1.jpg" alt="Chat Memory 1" />
+            </div>
+            <p className="photo-caption">Laughing together</p>
+          </div>
+          
+          <div className="photo-card">
+            <div className="photo-placeholder">
+              <img src="/chat-photo2.jpg" alt="Chat Memory 2" />
+            </div>
+            <p className="photo-caption">Best moments</p>
+          </div>
+          
+          <div className="photo-card">
+            <div className="photo-placeholder">
+              <img src="/chat-photo3.jpg" alt="Chat Memory 3" />
+            </div>
+            <p className="photo-caption">Fun times</p>
+          </div>
+          
+          <div className="photo-card">
+            <div className="photo-placeholder">
+              <img src="/chat-photo4.jpg" alt="Chat Memory 4" />
+            </div>
+            <p className="photo-caption">Great adventures</p>
+          </div>
+          
+          <div className="photo-card">
+            <div className="photo-placeholder">
+              <img src="/chat-photo5.jpg" alt="Chat Memory 5" />
+            </div>
+            <p className="photo-caption">Sweet memories</p>
+          </div>
+          
+          <div className="photo-card">
+            <div className="photo-placeholder">
+              <img src="/chat-photo6.jpg" alt="Chat Memory 6" />
+            </div>
+            <p className="photo-caption">Forever friends</p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -286,8 +395,8 @@ const BirthdayWebsite = () => {
           opacity: 0;
           transform: translateY(30px) scale(0.96);
           
-          /* Reveal animation */
-          animation: revealHero 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.8s forwards;
+          /* Reveal animation - delayed to allow ribbon to open first */
+          animation: revealHero 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) 1.9s forwards;
         }
 
         @keyframes revealHero {
@@ -336,6 +445,167 @@ const BirthdayWebsite = () => {
           }
         }
 
+        /* === GIFT RIBBON ANIMATION === */
+        
+        /* Ribbon container - wrapper around hero card */
+        .gift-ribbon-container {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 680px;
+          max-width: 90%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 15;
+        }
+
+        /* Horizontal ribbon across center */
+        .gift-ribbon {
+          position: absolute;
+          top: 50%;
+          left: 0;
+          right: 0;
+          height: 80px;
+          transform: translateY(-50%);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+
+        /* Left ribbon part */
+        .ribbon-left {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 50%;
+          height: 100%;
+          background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 50%, #0284c7 100%);
+          border-radius: 12px 0 0 12px;
+          box-shadow: 
+            0 4px 12px rgba(14, 165, 233, 0.3),
+            0 8px 24px rgba(14, 165, 233, 0.2),
+            inset 0 2px 4px rgba(255, 255, 255, 0.3),
+            inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+          
+          /* Animation: slide left, rotate, fade out */
+          animation: ribbonSlideLeft 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.8s forwards;
+        }
+
+        /* Right ribbon part */
+        .ribbon-right {
+          position: absolute;
+          right: 0;
+          top: 0;
+          width: 50%;
+          height: 100%;
+          background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 50%, #38bdf8 100%);
+          border-radius: 0 12px 12px 0;
+          box-shadow: 
+            0 4px 12px rgba(14, 165, 233, 0.3),
+            0 8px 24px rgba(14, 165, 233, 0.2),
+            inset 0 2px 4px rgba(255, 255, 255, 0.3),
+            inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+          
+          /* Animation: slide right, rotate, fade out */
+          animation: ribbonSlideRight 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.8s forwards;
+        }
+
+        /* Center knot/bow decoration */
+        .ribbon-knot {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 60px;
+          height: 60px;
+          background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 50%, #0ea5e9 100%);
+          border-radius: 50%;
+          box-shadow: 
+            0 0 0 4px rgba(255, 255, 255, 0.3),
+            0 4px 16px rgba(14, 165, 233, 0.4),
+            0 8px 32px rgba(14, 165, 233, 0.3),
+            inset 0 2px 6px rgba(255, 255, 255, 0.4),
+            inset 0 -2px 6px rgba(0, 0, 0, 0.15);
+          z-index: 20;
+          
+          /* Animation: scale up then fade out */
+          animation: knotReveal 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.8s forwards;
+        }
+
+        /* Ribbon shine effect */
+        .ribbon-left::before,
+        .ribbon-right::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 40%;
+          background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, transparent 100%);
+          border-radius: inherit;
+        }
+
+        /* Ribbon animations */
+        @keyframes ribbonSlideLeft {
+          0% {
+            transform: translateX(0) rotate(0deg);
+            opacity: 1;
+          }
+          70% {
+            opacity: 0.8;
+          }
+          100% {
+            transform: translateX(-120%) rotate(-15deg);
+            opacity: 0;
+          }
+        }
+
+        @keyframes ribbonSlideRight {
+          0% {
+            transform: translateX(0) rotate(0deg);
+            opacity: 1;
+          }
+          70% {
+            opacity: 0.8;
+          }
+          100% {
+            transform: translateX(120%) rotate(15deg);
+            opacity: 0;
+          }
+        }
+
+        @keyframes knotReveal {
+          0% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+          }
+          30% {
+            transform: translate(-50%, -50%) scale(1.15);
+            opacity: 1;
+          }
+          70% {
+            opacity: 0.7;
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(1.3);
+            opacity: 0;
+          }
+        }
+
+        /* Hide ribbon after animation completes */
+        @keyframes hideRibbon {
+          to {
+            display: none;
+            pointer-events: none;
+            visibility: hidden;
+          }
+        }
+
+        .gift-ribbon-container {
+          animation: hideRibbon 0.1s linear 2.1s forwards;
+        }
+
         .hero-content::before {
           content: '';
           position: absolute;
@@ -380,8 +650,8 @@ const BirthdayWebsite = () => {
           opacity: 0;
           transform: translateY(20px);
           
-          /* Staggered reveal - appears first */
-          animation: textReveal 1s cubic-bezier(0.4, 0, 0.2, 1) 1.4s forwards;
+          /* Staggered reveal - appears after ribbon opens */
+          animation: textReveal 1s cubic-bezier(0.4, 0, 0.2, 1) 2.5s forwards;
         }
 
         @keyframes textReveal {
@@ -413,8 +683,8 @@ const BirthdayWebsite = () => {
           opacity: 0;
           transform: translateY(20px);
           
-          /* Appears second */
-          animation: textReveal 1s cubic-bezier(0.4, 0, 0.2, 1) 1.8s forwards;
+          /* Appears after ribbon opens */
+          animation: textReveal 1s cubic-bezier(0.4, 0, 0.2, 1) 2.9s forwards;
         }
 
         .cta-button {
@@ -443,10 +713,10 @@ const BirthdayWebsite = () => {
           opacity: 0;
           transform: translateY(20px) scale(0.95);
           
-          /* Appears last */
+          /* Appears after ribbon opens */
           animation: 
-            buttonReveal 1s cubic-bezier(0.4, 0, 0.2, 1) 2.2s forwards,
-            buttonPulse 1.5s ease-out 3.4s 1;
+            buttonReveal 1s cubic-bezier(0.4, 0, 0.2, 1) 3.3s forwards,
+            buttonPulse 1.5s ease-out 4.5s 1;
         }
 
         @keyframes buttonReveal {
@@ -603,6 +873,147 @@ const BirthdayWebsite = () => {
           font-style: italic;
           color: #0284c7;
           font-size: clamp(1.15rem, 3vw, 1.35rem);
+        }
+
+        /* PHOTOS GRID SECTION */
+        .photos-grid-section {
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(10px);
+          border-radius: 28px;
+          padding: 48px 40px;
+          box-shadow: 
+            0 1px 3px rgba(59, 130, 246, 0.08),
+            0 4px 12px rgba(59, 130, 246, 0.1),
+            0 16px 48px rgba(96, 165, 250, 0.14);
+          border: 1px solid rgba(255, 255, 255, 0.9);
+          margin-bottom: 48px;
+          opacity: 0;
+          transform: translateY(40px);
+          transition: all 1s cubic-bezier(0.4, 0, 0.2, 1) 0.6s;
+        }
+
+        .photos-grid-section.visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .photos-heading {
+          font-family: 'Poppins', sans-serif;
+          font-size: clamp(1.65rem, 4vw, 2.15rem);
+          font-weight: 600;
+          background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          text-align: center;
+          margin-bottom: 12px;
+          letter-spacing: -0.5px;
+        }
+
+        .photos-subtext {
+          font-family: 'Inter', sans-serif;
+          font-size: clamp(0.95rem, 2vw, 1.05rem);
+          font-weight: 400;
+          color: #64748b;
+          text-align: center;
+          margin-bottom: 40px;
+          letter-spacing: 0.2px;
+        }
+
+        .photos-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 28px;
+          max-width: 900px;
+          margin: 0 auto;
+        }
+
+        .photo-card {
+          background: rgba(255, 255, 255, 0.7);
+          border-radius: 20px;
+          padding: 16px;
+          box-shadow: 
+            0 2px 4px rgba(59, 130, 246, 0.06),
+            0 4px 12px rgba(59, 130, 246, 0.08);
+          border: 1px solid rgba(224, 242, 254, 0.6);
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          opacity: 0;
+          transform: translateY(20px);
+          animation: photoFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        /* Staggered fade-in for each photo card */
+        .photos-grid-section.visible .photo-card:nth-child(1) { animation-delay: 0.8s; }
+        .photos-grid-section.visible .photo-card:nth-child(2) { animation-delay: 1s; }
+        .photos-grid-section.visible .photo-card:nth-child(3) { animation-delay: 1.2s; }
+        .photos-grid-section.visible .photo-card:nth-child(4) { animation-delay: 1.4s; }
+        .photos-grid-section.visible .photo-card:nth-child(5) { animation-delay: 1.6s; }
+        .photos-grid-section.visible .photo-card:nth-child(6) { animation-delay: 1.8s; }
+
+        @keyframes photoFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .photo-card:hover {
+          transform: translateY(-6px) scale(1.02);
+          box-shadow: 
+            0 4px 8px rgba(59, 130, 246, 0.12),
+            0 8px 20px rgba(59, 130, 246, 0.15),
+            0 16px 40px rgba(96, 165, 250, 0.12);
+          border-color: rgba(186, 230, 253, 0.8);
+        }
+
+        .photo-placeholder {
+          width: 100%;
+          aspect-ratio: 4/3;
+          border-radius: 14px;
+          overflow: hidden;
+          background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+          position: relative;
+          margin-bottom: 12px;
+        }
+
+        .photo-placeholder img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
+          transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .photo-card:hover .photo-placeholder img {
+          transform: scale(1.08);
+        }
+
+        /* Placeholder styling when image is not loaded */
+        .photo-placeholder:empty::before,
+        .photo-placeholder img[src=""]::before,
+        .photo-placeholder img:not([src])::before {
+          content: '📷';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          font-size: 3rem;
+          opacity: 0.3;
+        }
+
+        .photo-caption {
+          font-family: 'Inter', sans-serif;
+          font-size: 0.88rem;
+          font-weight: 500;
+          color: #64748b;
+          text-align: center;
+          letter-spacing: 0.1px;
+          margin: 0;
+          line-height: 1.4;
         }
 
         .memories-section {
@@ -896,6 +1307,29 @@ const BirthdayWebsite = () => {
             0 4px 12px rgba(14, 165, 233, 0.15);
         }
 
+        /* CHAT PAGE PHOTOS SECTION */
+        .chat-photos-section {
+          width: 100%;
+          max-width: 720px;
+          margin-top: 48px;
+          padding: 40px 36px;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(10px);
+          border-radius: 28px;
+          box-shadow: 
+            0 1px 3px rgba(59, 130, 246, 0.08),
+            0 4px 12px rgba(59, 130, 246, 0.1),
+            0 16px 48px rgba(96, 165, 250, 0.14);
+          border: 1px solid rgba(255, 255, 255, 0.9);
+          animation: fadeInUp 0.8s ease forwards;
+          animation-delay: 0.3s;
+          opacity: 0;
+        }
+
+        .chat-photos-section .photos-grid {
+          max-width: 100%;
+        }
+
         /* MOBILE RESPONSIVE */
         @media (max-width: 768px) {
           .page-container {
@@ -906,6 +1340,20 @@ const BirthdayWebsite = () => {
             padding: 48px 32px;
             border-radius: 32px;
             max-width: 92%;
+          }
+
+          /* Ribbon responsive sizing */
+          .gift-ribbon-container {
+            width: 92%;
+          }
+
+          .gift-ribbon {
+            height: 60px;
+          }
+
+          .ribbon-knot {
+            width: 48px;
+            height: 48px;
           }
 
           .main-heading {
@@ -925,6 +1373,17 @@ const BirthdayWebsite = () => {
           .letter-card {
             padding: 40px 28px;
             border-radius: 24px;
+          }
+
+          /* Photos grid - 2 columns on tablet */
+          .photos-grid-section {
+            padding: 36px 28px;
+            border-radius: 24px;
+          }
+
+          .photos-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
           }
 
           .memories-section {
@@ -952,6 +1411,13 @@ const BirthdayWebsite = () => {
             white-space: nowrap;
           }
 
+          /* Chat photos section - tablet */
+          .chat-photos-section {
+            padding: 36px 28px;
+            border-radius: 24px;
+            margin-top: 40px;
+          }
+
           .heart {
             font-size: 22px;
           }
@@ -973,6 +1439,20 @@ const BirthdayWebsite = () => {
             max-width: 94%;
           }
 
+          /* Ribbon responsive sizing for small screens */
+          .gift-ribbon-container {
+            width: 94%;
+          }
+
+          .gift-ribbon {
+            height: 50px;
+          }
+
+          .ribbon-knot {
+            width: 40px;
+            height: 40px;
+          }
+
           .main-heading {
             letter-spacing: 0.3px;
           }
@@ -985,6 +1465,25 @@ const BirthdayWebsite = () => {
           .letter-card, .memories-section {
             padding: 32px 24px;
             border-radius: 20px;
+          }
+
+          /* Photos grid - 1 column on mobile */
+          .photos-grid-section {
+            padding: 32px 24px;
+            border-radius: 20px;
+          }
+
+          .photos-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+          }
+
+          .photo-card {
+            padding: 14px;
+          }
+
+          .photo-caption {
+            font-size: 0.85rem;
           }
 
           .letter-content {
@@ -1009,6 +1508,13 @@ const BirthdayWebsite = () => {
           .message-bubble {
             max-width: 88%;
             font-size: 0.96rem;
+          }
+
+          /* Chat photos section - mobile */
+          .chat-photos-section {
+            padding: 32px 24px;
+            border-radius: 20px;
+            margin-top: 32px;
           }
 
           .heart {
