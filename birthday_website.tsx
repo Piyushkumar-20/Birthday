@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-type Message = { type: 'bot' | 'user'; text: string };
+type Message = { 
+  type: 'bot' | 'user'; 
+  text?: string; 
+  images?: string[];
+};
 
 const BirthdayWebsite = () => {
   const [currentPage, setCurrentPage] = useState('home');
@@ -9,7 +13,17 @@ const BirthdayWebsite = () => {
   ]);
   const [userInput, setUserInput] = useState('');
   const [isLetterVisible, setIsLetterVisible] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [chatPulse, setChatPulse] = useState(false);
+  const [greetingSent, setGreetingSent] = useState(false);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Audio system refs and state
+  const welcomeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const chatAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioStarted, setAudioStarted] = useState(false);
+  const [awaitingUnmute, setAwaitingUnmute] = useState(false);
+  const letterVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -27,18 +41,177 @@ const BirthdayWebsite = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
+  // Audio helpers: fade in/out for smooth transitions
+  const fadeInAudio = (audio: HTMLAudioElement, target = 0.35, duration = 800) => {
+    try {
+      audio.volume = 0;
+      const playPromise = audio.play();
+      if (playPromise) {
+        playPromise.catch(() => {/* ignore to respect autoplay policies */});
+      }
+      const step = 50;
+      const delta = target / (duration / step);
+      const id = setInterval(() => {
+        const next = Math.min(target, audio.volume + delta);
+        audio.volume = next;
+        if (next >= target) clearInterval(id);
+      }, step);
+    } catch {}
+  };
+
+  const fadeOutAudio = (audio: HTMLAudioElement, duration = 600, stop = true) => {
+    const step = 50;
+    const delta = audio.volume / (duration / step);
+    const id = setInterval(() => {
+      const next = Math.max(0, audio.volume - delta);
+      audio.volume = next;
+      if (next <= 0) {
+        clearInterval(id);
+        if (stop) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+      }
+    }, step);
+  };
+
+  // Ensure welcome audio can start immediately within a user gesture (mobile/iOS friendly)
+  const startWelcomeAudio = () => {
+    const audio = welcomeAudioRef.current;
+    if (!audio) return;
+    try {
+      audio.loop = true;
+      audio.muted = false;
+      audio.volume = 0.35;
+      const p = audio.play();
+      if (p) {
+        p.then(() => {
+          setAudioStarted(true);
+          setAwaitingUnmute(false);
+        }).catch(() => {
+          // Fallback: start muted then unmute on next gesture
+          try {
+            audio.muted = true;
+            audio.play().catch(() => {});
+            setAwaitingUnmute(true);
+          } catch {}
+        });
+      }
+    } catch {}
+  };
+
+  const handleOpenSurprise = () => {
+    // Start welcome music immediately on this gesture, then navigate
+    const audio = welcomeAudioRef.current;
+    if (!audioStarted && audio) {
+      try {
+        audio.loop = true;
+        audio.muted = false;
+        audio.volume = 0.35;
+        const p = audio.play();
+        if (p) p.catch(() => {});
+        setAudioStarted(true);
+      } catch {}
+    }
+    setTimeout(() => setCurrentPage('letter'), 150);
+  };
+
+  const handleGoToChat = () => {
+    // Smoothly transition from welcome music to chat music
+    setCurrentPage('chat');
+    if (welcomeAudioRef.current) {
+      fadeOutAudio(welcomeAudioRef.current, 700, true);
+    }
+    if (chatAudioRef.current) {
+      chatAudioRef.current.loop = true;
+      fadeInAudio(chatAudioRef.current, 0.35, 900);
+    }
+  };
+
+  // Try to start welcome audio on first load, respecting autoplay policies
+  useEffect(() => {
+    if (currentPage === 'home' && welcomeAudioRef.current && !audioStarted) {
+      const audio = welcomeAudioRef.current;
+      audio.loop = true;
+      audio.volume = 0.35;
+      const p = audio.play();
+      if (p) {
+        p.then(() => {
+          setAudioStarted(true);
+          setAwaitingUnmute(false);
+        }).catch(() => {
+          // Autoplay may be blocked; rely on gesture handlers
+        });
+      }
+    }
+  }, [currentPage, audioStarted]);
+
+  // Unlock audio on first user interaction if it was muted
+  useEffect(() => {
+    if (!awaitingUnmute) return;
+    const unlock = () => {
+      const audio = welcomeAudioRef.current;
+      if (audio) {
+        audio.muted = false;
+        fadeInAudio(audio, 0.35, 700);
+      }
+      setAwaitingUnmute(false);
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, [awaitingUnmute]);
+
+  // Pause welcome song when letter video plays; resume when paused/ended
+  useEffect(() => {
+    if (currentPage !== 'letter') return;
+    const video = letterVideoRef.current;
+    if (!video) return;
+    const onPlay = () => {
+      const audio = welcomeAudioRef.current;
+      if (audio) {
+        fadeOutAudio(audio, 450, false);
+        setTimeout(() => {
+          try { audio.pause(); } catch {}
+        }, 470);
+      }
+    };
+    const onPause = () => {
+      const audio = welcomeAudioRef.current;
+      if (audio) {
+        try { audio.play().catch(() => {}); } catch {}
+        fadeInAudio(audio, 0.35, 700);
+      }
+    };
+    video.addEventListener('play', onPlay);
+    video.addEventListener('pause', onPause);
+    video.addEventListener('ended', onPause);
+    return () => {
+      video.removeEventListener('play', onPlay);
+      video.removeEventListener('pause', onPause);
+      video.removeEventListener('ended', onPause);
+    };
+  }, [currentPage]);
+
   const handleSendMessage = () => {
     if (!userInput.trim()) return;
 
     const newMessages: Message[] = [...chatMessages, { type: 'user' as const, text: userInput }];
     
-    const lowerInput = userInput.toLowerCase();
+    const lowerInput = userInput.toLowerCase().trim();
     let botReply = '';
+    let shouldSendPhotos = false;
 
     // Rule-based responses (PLACEHOLDER - customize these!)
-    if (lowerInput.includes('hello') || lowerInput.includes('hi') || lowerInput.includes('hey')) {
+    if ((lowerInput === 'hello' || lowerInput === 'hi' || lowerInput === 'hii' || lowerInput === 'hey') && !greetingSent) {
       botReply = 'Surpriseee, Happy Birthday Anu Bache! Yup Yup Apurv this side apka pati aur best friend dono. 🎉🎂 Shi bolta hai piyush maan lo uski baat koi gf nhi hai meri na mai kisi ke sath talking stage pe hu, Wo to mai apko isliye bol raha tha ki ap gussaa ho jao aur ap apne pe dhyaan dene lag jao. And yes I am very Proud of my bacha jaise ap sambhal rhe ho acha kar rhe ho itna jayda improve kar liya hai its so impressive aur ap bilkul bhi guilt mat liya karo, ha i know cheezen thik nhi hai ap thik nhi ho mai thik nhi ho par ap thik to mai bhi thik. And one more thing Congratulations for your internship your reappear clear. Keep Going Ha mai bhi apko miss karta hu aur block ke liye bhi sorry mai emotional ho jata hu apko dekh ke bas isliye. I am and I Will always be proud of you remember this, You are and You will alway special to me. At last Love you 😚😚😟😟😟Ye lo emoji miss kar rhe the na app. Dont Cry Always Be Happpyyyy because you are strong and confident. Good Boi';
-
+      shouldSendPhotos = true;
+      setGreetingSent(true);
     } else if (lowerInput.includes('thankyou so much ji')) {
       botReply = '🥰 You\'re so welcome! You deserve all the happiness in the world!';
     } else if (lowerInput.includes('love')) {
@@ -47,8 +220,31 @@ const BirthdayWebsite = () => {
       botReply = '✨ That\'s wonderful! Today is all about YOU and celebrating the amazing person you are.';
     }
 
+    // Subtle micro-feedback on send
+    setIsSending(true);
+    setChatPulse(true);
+    setTimeout(() => setIsSending(false), 220);
+    setTimeout(() => setChatPulse(false), 500);
+
     setTimeout(() => {
       setChatMessages([...newMessages, { type: 'bot' as const, text: botReply }]);
+      
+      // Send photos after text message if it's a greeting
+      if (shouldSendPhotos) {
+        setTimeout(() => {
+          setChatMessages(prev => [
+            ...prev,
+            {
+              type: 'bot' as const,
+              images: [
+                '/Memory 1.jpg',
+                '/Memory 2.jpg',
+                '/Memory 3.jpg'
+              ]
+            }
+          ]);
+        }, 800);
+      }
     }, 800);
 
     setChatMessages(newMessages);
@@ -56,7 +252,7 @@ const BirthdayWebsite = () => {
   };
 
   const renderHome = () => (
-    <div className="page-container home-page">
+    <div className="page-container home-page" onPointerDown={startWelcomeAudio} onTouchStart={startWelcomeAudio} onClick={startWelcomeAudio}>
       <div className="floating-hearts">
         {[...Array(15)].map((_, i) => (
           <div key={i} className="heart" style={{
@@ -64,6 +260,21 @@ const BirthdayWebsite = () => {
             animationDelay: `${Math.random() * 5}s`,
             animationDuration: `${8 + Math.random() * 4}s`
           }}>💙😎😎🥰</div>
+        ))}
+      </div>
+      {/* Ambient drifting orbs for calm, living background */}
+      <div className="ambient-orbs" aria-hidden="true">
+        {[...Array(5)].map((_, i) => (
+          <div
+            key={i}
+            className="orb"
+            style={{
+              left: `${10 + Math.random() * 80}%`,
+              top: `${10 + Math.random() * 70}%`,
+              animationDelay: `${i * 2}s`,
+              transform: `translate(-50%, -50%) scale(${0.8 + Math.random() * 0.6})`
+            }}
+          />
         ))}
       </div>
       
@@ -83,7 +294,7 @@ const BirthdayWebsite = () => {
           Today is a celebration of YOU — the most amazing friend anyone could ask for. 
           Get ready for a special surprise made just for you...
         </p>
-        <button className="cta-button" onClick={() => setCurrentPage('letter')}>
+        <button className="cta-button" onClick={handleOpenSurprise}>
           Open Your Surprise →
         </button>
       </div>
@@ -91,7 +302,7 @@ const BirthdayWebsite = () => {
   );
 
   const renderLetter = () => (
-    <div className="page-container letter-page">
+    <div className="page-container letter-page" onPointerDown={!audioStarted ? startWelcomeAudio : undefined} onTouchStart={!audioStarted ? startWelcomeAudio : undefined} onClick={!audioStarted ? startWelcomeAudio : undefined}>
       <div className={`letter-card ${isLetterVisible ? 'visible' : ''}`}>
         <div className="letter-header">
           <h2>A Letter For You Hnji Hnji Laddooo Bacha ke Liye Hi Hai </h2>
@@ -125,14 +336,14 @@ const BirthdayWebsite = () => {
       <div className={`memories-section ${isLetterVisible ? 'visible' : ''}`}>
         <h3>Our Beautiful Memories 🎬</h3>
         <div className="video-container">
-          <video controls playsInline>
+          <video ref={letterVideoRef} controls playsInline>
             <source src="/birthday-video.mp4" type="video/mp4" />
             Your browser does not support the video tag.
           </video>
         </div>
       </div>
 
-      <button className="cta-button" onClick={() => setCurrentPage('chat')}>
+      <button className="cta-button" onClick={handleGoToChat}>
         One More Surprise
       </button>
     </div>
@@ -145,12 +356,23 @@ const BirthdayWebsite = () => {
         <p>I'm here to make your day even more special</p>
       </div>
 
-      <div className="chat-messages">
+      <div className={`chat-messages ${chatPulse ? 'pulse' : ''}`}>
         {chatMessages.map((msg, idx) => (
           <div key={idx} className={`message ${msg.type}`}>
-            <div className="message-bubble">
-              {msg.text}
-            </div>
+            {msg.text && (
+              <div className="message-bubble">
+                {msg.text}
+              </div>
+            )}
+            {msg.images && msg.images.length > 0 && (
+              <div className="message-images">
+                {msg.images.map((imgSrc, imgIdx) => (
+                  <div key={imgIdx} className="image-bubble">
+                    <img src={imgSrc} alt={`Memory ${imgIdx + 1}`} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
         <div ref={chatEndRef} />
@@ -165,59 +387,9 @@ const BirthdayWebsite = () => {
           placeholder="Type your message..."
           className="chat-input"
         />
-        <button onClick={handleSendMessage} className="send-button">
+        <button onClick={handleSendMessage} className={`send-button ${isSending ? 'sending' : ''}`}>
           Send
         </button>
-      </div>
-
-      {/* Photos Section on Chat Page */}
-      <div className="chat-photos-section">
-        <h3 className="photos-heading">More Precious Moments 💫</h3>
-        <p className="photos-subtext">Reliving our best times together</p>
-        
-        <div className="photos-grid">
-          <div className="photo-card">
-            <div className="photo-placeholder">
-              <img src="/chat-photo1.jpg" alt="Chat Memory 1" />
-            </div>
-            <p className="photo-caption">Laughing together</p>
-          </div>
-          
-          <div className="photo-card">
-            <div className="photo-placeholder">
-              <img src="/chat-photo2.jpg" alt="Chat Memory 2" />
-            </div>
-            <p className="photo-caption">Best moments</p>
-          </div>
-          
-          <div className="photo-card">
-            <div className="photo-placeholder">
-              <img src="/chat-photo3.jpg" alt="Chat Memory 3" />
-            </div>
-            <p className="photo-caption">Fun times</p>
-          </div>
-          
-          <div className="photo-card">
-            <div className="photo-placeholder">
-              <img src="/chat-photo4.jpg" alt="Chat Memory 4" />
-            </div>
-            <p className="photo-caption">Great adventures</p>
-          </div>
-          
-          <div className="photo-card">
-            <div className="photo-placeholder">
-              <img src="/chat-photo5.jpg" alt="Chat Memory 5" />
-            </div>
-            <p className="photo-caption">Sweet memories</p>
-          </div>
-          
-          <div className="photo-card">
-            <div className="photo-placeholder">
-              <img src="/chat-photo6.jpg" alt="Chat Memory 6" />
-            </div>
-            <p className="photo-caption">Forever friends</p>
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -226,6 +398,15 @@ const BirthdayWebsite = () => {
     <div className="birthday-website">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+        :root {
+          --radius-card: 24px;
+          --radius-bubble: 18px;
+          --shadow-soft: 0 1px 3px rgba(59,130,246,0.08), 0 8px 24px rgba(59,130,246,0.08);
+          --shadow-inset: inset 0 2px 8px rgba(59,130,246,0.04);
+          --easing-soft: cubic-bezier(0.4, 0, 0.2, 1);
+          --duration-entrance: 0.6s;
+        }
 
         * {
           margin: 0;
@@ -347,8 +528,10 @@ const BirthdayWebsite = () => {
           opacity: 0;
           transform: translateY(30px) scale(0.96);
           
-          /* Reveal animation - delayed to allow ribbon to open first */
-          animation: revealHero 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) 1.9s forwards;
+          /* Reveal then continuous calm float */
+          animation: 
+            revealHero 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) 1.9s forwards,
+            heroFloat 18s ease-in-out 3.4s infinite alternate;
         }
 
         @keyframes revealHero {
@@ -366,6 +549,19 @@ const BirthdayWebsite = () => {
             transform: translateY(0) scale(1);
             filter: blur(0);
           }
+        }
+
+        /* Gentle continuous float to keep hero alive */
+        @keyframes heroFloat {
+          0% { transform: translateY(0) scale(1); box-shadow: 
+            0 0 0 1px rgba(255, 255, 255, 0.9) inset,
+            0 2px 4px rgba(59, 130, 246, 0.05),
+            0 8px 16px rgba(59, 130, 246, 0.08),
+            0 20px 48px rgba(96, 165, 250, 0.12),
+            0 32px 80px rgba(147, 197, 253, 0.1);
+          }
+          50% { transform: translateY(-4px) scale(1.005); }
+          100% { transform: translateY(0) scale(1); }
         }
 
         /* Glow halo that appears during reveal */
@@ -668,7 +864,12 @@ const BirthdayWebsite = () => {
           /* Appears after ribbon opens */
           animation: 
             buttonReveal 1s cubic-bezier(0.4, 0, 0.2, 1) 3.3s forwards,
-            buttonPulse 1.5s ease-out 4.5s 1;
+            idleGlow 6s ease-in-out 5s infinite;
+        }
+
+        /* Faster reveal for the letter page CTA (no long delay) */
+        .letter-page .cta-button {
+          animation: buttonReveal 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards, idleGlow 6s ease-in-out 2s infinite;
         }
 
         @keyframes buttonReveal {
@@ -753,6 +954,57 @@ const BirthdayWebsite = () => {
             0 6px 12px rgba(14, 165, 233, 0.15),
             0 0 0 4px rgba(56, 189, 248, 0.08);
         }
+
+        /* Subtle idle glow loop to keep button inviting */
+        @keyframes idleGlow {
+          0% { box-shadow: 
+            0 2px 4px rgba(14, 165, 233, 0.2),
+            0 8px 16px rgba(14, 165, 233, 0.15),
+            0 16px 32px rgba(14, 165, 233, 0.1),
+            inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+          }
+          50% { box-shadow: 
+            0 4px 10px rgba(14, 165, 233, 0.26),
+            0 12px 22px rgba(14, 165, 233, 0.2),
+            0 20px 40px rgba(14, 165, 233, 0.14),
+            inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.25);
+          }
+          100% { box-shadow: 
+            0 2px 4px rgba(14, 165, 233, 0.2),
+            0 8px 16px rgba(14, 165, 233, 0.15),
+            0 16px 32px rgba(14, 165, 233, 0.1),
+            inset 0 -2px 0 rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 0.2);
+          }
+        }
+
+        /* Ambient orbs styling */
+        .ambient-orbs {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          pointer-events: none;
+          z-index: 2;
+        }
+        .ambient-orbs .orb {
+          position: absolute;
+          width: 220px;
+          height: 220px;
+          border-radius: 50%;
+          filter: blur(30px);
+          opacity: 0.18;
+          background: radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, rgba(14, 165, 233, 0.22) 40%, transparent 70%);
+          animation: drift 24s ease-in-out infinite;
+        }
+        @keyframes drift {
+          0% { transform: translate(-50%, -50%) scale(1); }
+          50% { transform: translate(-48%, -52%) scale(1.06); }
+          100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+
 
         /* LETTER PAGE */
         .letter-page {
@@ -1095,13 +1347,29 @@ const BirthdayWebsite = () => {
           padding: 24px;
           background: rgba(255, 255, 255, 0.7);
           backdrop-filter: blur(8px);
-          border-radius: 24px;
+          border-radius: var(--radius-card);
           box-shadow: 
             inset 0 2px 8px rgba(59, 130, 246, 0.04),
             0 1px 3px rgba(59, 130, 246, 0.06);
           border: 1px solid rgba(255, 255, 255, 0.8);
-          margin-bottom: 24px;
+          margin-bottom: 28px;
           scroll-behavior: smooth;
+        }
+
+        .chat-messages.pulse {
+          animation: pulseBorder 0.5s var(--easing-soft);
+        }
+
+        @keyframes pulseBorder {
+          0% {
+            box-shadow: var(--shadow-inset), 0 1px 3px rgba(59,130,246,0.06);
+          }
+          50% {
+            box-shadow: inset 0 0 0 3px rgba(56,189,248,0.12), 0 4px 12px rgba(59,130,246,0.12);
+          }
+          100% {
+            box-shadow: var(--shadow-inset), 0 1px 3px rgba(59,130,246,0.06);
+          }
         }
 
         .chat-messages::-webkit-scrollbar {
@@ -1151,14 +1419,14 @@ const BirthdayWebsite = () => {
         .message-bubble {
           max-width: 78%;
           padding: 14px 20px;
-          border-radius: 20px;
+          border-radius: var(--radius-bubble);
           font-family: 'Inter', sans-serif;
           font-size: 0.98rem;
           line-height: 1.6;
           font-weight: 400;
           letter-spacing: 0.1px;
           position: relative;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.3s var(--easing-soft);
         }
 
         .message.user .message-bubble {
@@ -1211,7 +1479,7 @@ const BirthdayWebsite = () => {
           font-weight: 400;
           color: #334155;
           outline: none;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.25s var(--easing-soft);
           box-shadow: 0 2px 8px rgba(148, 163, 184, 0.08);
         }
 
@@ -1239,10 +1507,15 @@ const BirthdayWebsite = () => {
           font-weight: 600;
           letter-spacing: 0.3px;
           cursor: pointer;
-          transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.25s var(--easing-soft);
           box-shadow: 
             0 2px 4px rgba(14, 165, 233, 0.2),
             0 6px 16px rgba(14, 165, 233, 0.15);
+        }
+
+        .send-button.sending {
+          transform: translateY(-1px) scale(0.98);
+          filter: brightness(1.04);
         }
 
         .send-button:hover {
@@ -1259,27 +1532,70 @@ const BirthdayWebsite = () => {
             0 4px 12px rgba(14, 165, 233, 0.15);
         }
 
-        /* CHAT PAGE PHOTOS SECTION */
-        .chat-photos-section {
-          width: 100%;
-          max-width: 720px;
-          margin-top: 48px;
-          padding: 40px 36px;
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(10px);
-          border-radius: 28px;
-          box-shadow: 
-            0 1px 3px rgba(59, 130, 246, 0.08),
-            0 4px 12px rgba(59, 130, 246, 0.1),
-            0 16px 48px rgba(96, 165, 250, 0.14);
-          border: 1px solid rgba(255, 255, 255, 0.9);
-          animation: fadeInUp 0.8s ease forwards;
-          animation-delay: 0.3s;
-          opacity: 0;
+        /* MESSAGE IMAGES IN CHAT */
+        .message-images {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+          max-width: 95%;
+          margin-top: 8px;
         }
 
-        .chat-photos-section .photos-grid {
-          max-width: 100%;
+        /* If only one image, make it larger */
+        .message-images:has(.image-bubble:only-child) {
+          grid-template-columns: 1fr;
+          max-width: 75%;
+        }
+
+        /* If 3 images, make last one span full width */
+        .message-images:has(.image-bubble:nth-child(3):last-child) .image-bubble:last-child {
+          grid-column: 1 / -1;
+        }
+
+        .image-bubble {
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 
+            0 2px 6px rgba(59, 130, 246, 0.12),
+            0 6px 16px rgba(96, 165, 250, 0.15);
+          transition: all 0.3s var(--easing-soft);
+          background: rgba(240, 249, 255, 0.5);
+          animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+          aspect-ratio: 3 / 4;
+          min-height: 280px;
+        }
+
+        .image-bubble:hover {
+          transform: translateY(-2px);
+          box-shadow: 
+            0 4px 10px rgba(59, 130, 246, 0.18),
+            0 10px 24px rgba(96, 165, 250, 0.2);
+        }
+
+        .image-bubble img {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: cover;
+          border-radius: 12px;
+        }
+
+        /* Placeholder for missing images */
+        .image-bubble img[src*=".jpg"]:not([src^="data:"]) {
+          min-height: 200px;
+          background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+        }
+
+        .image-bubble img[src=""]:before,
+        .image-bubble img:not([src]):before {
+          content: '📷';
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          min-height: 200px;
+          font-size: 3rem;
+          background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
         }
 
         /* MOBILE RESPONSIVE */
@@ -1363,13 +1679,6 @@ const BirthdayWebsite = () => {
             white-space: nowrap;
           }
 
-          /* Chat photos section - tablet */
-          .chat-photos-section {
-            padding: 36px 28px;
-            border-radius: 24px;
-            margin-top: 40px;
-          }
-
           .heart {
             font-size: 22px;
           }
@@ -1377,6 +1686,14 @@ const BirthdayWebsite = () => {
           .message-bubble {
             max-width: 82%;
             padding: 12px 18px;
+          }
+
+          .message-images {
+            max-width: 96%;
+          }
+
+          .message-images:has(.image-bubble:only-child) {
+            max-width: 80%;
           }
         }
 
@@ -1462,11 +1779,17 @@ const BirthdayWebsite = () => {
             font-size: 0.96rem;
           }
 
-          /* Chat photos section - mobile */
-          .chat-photos-section {
-            padding: 32px 24px;
-            border-radius: 20px;
-            margin-top: 32px;
+          .message-images {
+            max-width: 98%;
+            gap: 8px;
+          }
+
+          .message-images:has(.image-bubble:only-child) {
+            max-width: 85%;
+          }
+
+          .image-bubble {
+            border-radius: 10px;
           }
 
           .heart {
@@ -1496,7 +1819,48 @@ const BirthdayWebsite = () => {
             padding: 56px 48px;
           }
         }
+
+        /* Pro polish overrides for consistent radii across major cards */
+        .hero-content,
+        .letter-card,
+        .memories-section,
+        .chat-header {
+          border-radius: var(--radius-card);
+        }
+
+        /* Sound unlock prompt (mobile-friendly) */
+        .sound-unlock {
+          position: fixed;
+          bottom: 18px;
+          left: 50%;
+          transform: translateX(-50%);
+          padding: 10px 16px;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.95);
+          border: 1px solid rgba(186, 230, 253, 0.8);
+          color: #0ea5e9;
+          font-family: 'Inter', sans-serif;
+          font-size: 0.95rem;
+          font-weight: 600;
+          letter-spacing: 0.2px;
+          box-shadow:
+            0 2px 4px rgba(14, 165, 233, 0.15),
+            0 8px 20px rgba(14, 165, 233, 0.12);
+          cursor: pointer;
+          z-index: 50;
+        }
+        .sound-unlock:hover {
+          background: white;
+          border-color: rgba(56, 189, 248, 0.6);
+          box-shadow:
+            0 4px 8px rgba(14, 165, 233, 0.2),
+            0 12px 28px rgba(14, 165, 233, 0.16);
+        }
       `}</style>
+
+      {/* Background audio elements (hidden) */}
+      <audio ref={welcomeAudioRef} src="/welcome-song.mp3" preload="auto" autoPlay />
+      <audio ref={chatAudioRef} src="/chat-song.mp3" preload="auto" />
 
       {currentPage === 'home' && renderHome()}
       {currentPage === 'letter' && renderLetter()}
