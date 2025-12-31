@@ -253,15 +253,6 @@ const BirthdayWebsite = () => {
 
   const renderHome = () => (
     <div className="page-container home-page" onPointerDown={startWelcomeAudio} onTouchStart={startWelcomeAudio} onClick={startWelcomeAudio}>
-      <div className="floating-hearts">
-        {[...Array(15)].map((_, i) => (
-          <div key={i} className="heart" style={{
-            left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 5}s`,
-            animationDuration: `${8 + Math.random() * 4}s`
-          }}>💙😎😎🥰</div>
-        ))}
-      </div>
       {/* Ambient drifting orbs for calm, living background */}
       <div className="ambient-orbs" aria-hidden="true">
         {[...Array(5)].map((_, i) => (
@@ -276,6 +267,22 @@ const BirthdayWebsite = () => {
             }}
           />
         ))}
+      </div>
+      
+      {/* Polaroid Photos Section */}
+      <div className="polaroid-container">
+        <div className="polaroid" style={{ '--rotation': '-3deg' } as React.CSSProperties}>
+          <img src="/laddoo-1.jpg" alt="Memory moment" />
+        </div>
+        <div className="polaroid" style={{ '--rotation': '2deg' } as React.CSSProperties}>
+          <img src="/laddoo-2.jpg" alt="Happy memory" />
+        </div>
+        <div className="polaroid" style={{ '--rotation': '-4deg' } as React.CSSProperties}>
+          <img src="/laddoo-3.jpg" alt="Special moment" />
+        </div>
+        <div className="polaroid" style={{ '--rotation': '3deg' } as React.CSSProperties}>
+          <img src="/laddoo-4.jpg" alt="Cherished memory" />
+        </div>
       </div>
       
       {/* Gift Ribbon Overlay */}
@@ -511,18 +518,14 @@ const BirthdayWebsite = () => {
           z-index: 10;
           position: relative;
           max-width: 680px;
-          background: rgba(255, 255, 255, 0.75);
-          backdrop-filter: blur(20px) saturate(180%);
-          padding: 64px 56px;
-          border-radius: 36px;
-          box-shadow: 
-            0 0 0 1px rgba(255, 255, 255, 0.9) inset,
-            0 2px 4px rgba(59, 130, 246, 0.05),
-            0 8px 16px rgba(59, 130, 246, 0.08),
-            0 20px 48px rgba(96, 165, 250, 0.12),
-            0 32px 80px rgba(147, 197, 253, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.9);
+          background: transparent;
+          backdrop-filter: none;
+          padding: 40px 32px;
+          border-radius: 0;
+          box-shadow: none;
+          border: none;
           transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+          text-align: center;
           
           /* Initial hidden state */
           opacity: 0;
@@ -553,13 +556,7 @@ const BirthdayWebsite = () => {
 
         /* Gentle continuous float to keep hero alive */
         @keyframes heroFloat {
-          0% { transform: translateY(0) scale(1); box-shadow: 
-            0 0 0 1px rgba(255, 255, 255, 0.9) inset,
-            0 2px 4px rgba(59, 130, 246, 0.05),
-            0 8px 16px rgba(59, 130, 246, 0.08),
-            0 20px 48px rgba(96, 165, 250, 0.12),
-            0 32px 80px rgba(147, 197, 253, 0.1);
-          }
+          0% { transform: translateY(0) scale(1); }
           50% { transform: translateY(-4px) scale(1.005); }
           100% { transform: translateY(0) scale(1); }
         }
@@ -568,12 +565,12 @@ const BirthdayWebsite = () => {
         .hero-content::after {
           content: '';
           position: absolute;
-          top: -40px;
-          left: -40px;
-          right: -40px;
-          bottom: -40px;
-          background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 70%);
-          border-radius: 50px;
+          top: -60px;
+          left: -60px;
+          right: -60px;
+          bottom: -60px;
+          background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, transparent 70%);
+          border-radius: 50%;
           z-index: -1;
           opacity: 0;
           animation: glowReveal 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.8s forwards;
@@ -754,30 +751,201 @@ const BirthdayWebsite = () => {
           animation: hideRibbon 0.1s linear 2.1s forwards;
         }
 
+        /* === POLAROID PHOTOS SECTION === */
+        .polaroid-container {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 8;
+          overflow: hidden;
+          top: 0;
+          left: 0;
+        }
+
+        .polaroid {
+          position: absolute;
+          width: 160px;
+          height: 180px;
+          background: #fafafa;
+          padding: 12px;
+          padding-bottom: 32px;
+          border-radius: 6px;
+          box-shadow: 
+            0 4px 16px rgba(0, 0, 0, 0.15),
+            0 8px 32px rgba(0, 0, 0, 0.1),
+            0 12px 48px rgba(0, 0, 0, 0.08);
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          opacity: 0;
+          transform: translateY(40px) rotate(0deg);
+          animation: polaroidFadeIn 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          pointer-events: auto;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          rotate: var(--rotation, 0deg);
+        }
+
+        /* Staggered polaroid animations */
+        .polaroid:nth-child(1) {
+          animation-delay: 3.8s;
+          bottom: 12%;
+          left: 8%;
+        }
+
+        .polaroid:nth-child(2) {
+          animation-delay: 4.2s;
+          top: 15%;
+          right: 10%;
+        }
+
+        .polaroid:nth-child(3) {
+          animation-delay: 4.6s;
+          bottom: 18%;
+          right: 6%;
+        }
+
+        .polaroid:nth-child(4) {
+          animation-delay: 5s;
+          top: 20%;
+          left: 12%;
+        }
+
+        @keyframes polaroidFadeIn {
+          0% {
+            opacity: 0;
+            transform: translateY(40px) scale(0.88);
+            filter: blur(8px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+          }
+        }
+
+        .polaroid img {
+          width: 100%;
+          height: 120px;
+          object-fit: cover;
+          border-radius: 3px;
+          display: block;
+          background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+        }
+
+        /* Subtle paper texture on polaroid */
+        .polaroid::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' result='noise'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%23fff' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
+          border-radius: 6px;
+          pointer-events: none;
+        }
+
+        .polaroid:hover {
+          transform: translateY(-8px) rotate(var(--rotation, 0deg));
+          box-shadow: 
+            0 6px 20px rgba(0, 0, 0, 0.2),
+            0 12px 40px rgba(0, 0, 0, 0.15),
+            0 16px 56px rgba(0, 0, 0, 0.12);
+        }
+
+        .polaroid:hover img {
+          transform: scale(1.02);
+        }
+
+        /* Floating animation for polaroids after they appear */
+        .polaroid {
+          animation: 
+            polaroidFadeIn 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+            polaroidFloat 6s ease-in-out 5s infinite;
+        }
+
+        @keyframes polaroidFloat {
+          0% { transform: translateY(0) rotate(var(--rotation, 0deg)); }
+          50% { transform: translateY(-8px) rotate(var(--rotation, 0deg)); }
+          100% { transform: translateY(0) rotate(var(--rotation, 0deg)); }
+        }
+
+        /* Mobile: Adjust polaroids visibility */
+        @media (max-width: 1024px) {
+          .polaroid {
+            width: 140px;
+            height: 160px;
+            padding: 10px;
+            padding-bottom: 28px;
+          }
+
+          .polaroid img {
+            height: 100px;
+          }
+
+          .polaroid:nth-child(1) { left: 4%; bottom: 8%; }
+          .polaroid:nth-child(2) { right: 6%; top: 12%; }
+          .polaroid:nth-child(3) { right: 3%; bottom: 12%; }
+          .polaroid:nth-child(4) { left: 8%; top: 18%; }
+        }
+
+        @media (max-width: 768px) {
+          .polaroid-container {
+            overflow: visible;
+          }
+
+          .polaroid {
+            width: 120px;
+            height: 150px;
+            padding: 8px;
+            padding-bottom: 18px;
+            transform: scale(0.85);
+            transform-origin: center;
+          }
+
+          .polaroid img {
+            height: 90px;
+          }
+
+          /* Position polaroids safely at corners with subtle rotation */
+          .polaroid:nth-child(1) { 
+            bottom: 80px;
+            left: 12px;
+            rotate: -3deg;
+            opacity: 0.9;
+            animation-delay: 3.8s;
+          }
+
+          .polaroid:nth-child(2) { 
+            top: 120px;
+            right: 12px;
+            rotate: 4deg;
+            opacity: 0.9;
+            animation-delay: 4.2s;
+          }
+
+          .polaroid:nth-child(3) { 
+            display: none;
+          }
+
+          .polaroid:nth-child(4) { 
+            display: none;
+          }
+        }
+
         .hero-content::before {
           content: '';
           position: absolute;
           top: 0;
           left: 0;
           right: 0;
-          height: 1px;
-          background: linear-gradient(90deg, 
-            transparent 0%, 
-            rgba(186, 230, 253, 0.8) 20%, 
-            rgba(224, 242, 254, 0.9) 50%, 
-            rgba(186, 230, 253, 0.8) 80%, 
-            transparent 100%);
+          height: 0;
+          background: transparent;
           border-radius: 36px 36px 0 0;
+          display: none;
         }
 
         .hero-content:hover {
-          transform: translateY(-6px) scale(1);
-          box-shadow: 
-            0 0 0 1px rgba(255, 255, 255, 0.95) inset,
-            0 4px 8px rgba(59, 130, 246, 0.08),
-            0 12px 24px rgba(59, 130, 246, 0.1),
-            0 24px 56px rgba(96, 165, 250, 0.14),
-            0 40px 96px rgba(147, 197, 253, 0.12);
+          transform: translateY(-2px) scale(1);
+          box-shadow: none;
         }
 
         .main-heading {
@@ -1605,9 +1773,11 @@ const BirthdayWebsite = () => {
           }
 
           .hero-content {
-            padding: 48px 32px;
-            border-radius: 32px;
-            max-width: 92%;
+            padding: 32px 20px;
+            border-radius: 0;
+            max-width: 100%;
+            background: transparent;
+            box-shadow: none;
           }
 
           /* Ribbon responsive sizing */
@@ -1625,17 +1795,20 @@ const BirthdayWebsite = () => {
           }
 
           .main-heading {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             letter-spacing: 0.5px;
+            font-size: clamp(2rem, 6vw, 3rem);
           }
 
           .hero-subtext {
-            margin-bottom: 36px;
+            margin-bottom: 28px;
             line-height: 1.8;
+            font-size: clamp(0.95rem, 2.5vw, 1.1rem);
           }
 
           .cta-button {
-            padding: 18px 44px;
+            padding: 16px 40px;
+            font-size: 1rem;
           }
 
           .letter-card {
